@@ -1,0 +1,29 @@
+Przykładowy plik konfiguracyjny opisujący działanie TypeScript:
+
+tsconfig.json
+
+{
+  "compilerOptions": {
+    "noImplicitAny": true,		// pokaż błąd gdy przypisany typ danych to 'any'
+    "preserveConstEnums": true,		// typ Enum zostanie w wygenerowanym JS
+    "sourceMap": true,			// włącza sourceMap by widzieć połączenie JS z TS (np. błędy)
+    "target": "es6",			// jaka wersję JS wygenerować
+    "downlevelIteration": true,		// działanie nowych pętli np. for..of i for..in
+    "lib": ["es6", "dom.iterable"],	// co jest dostępne. Można dopisać "dom", gdy jest to aplikacja frontendowa
+    "outDir": "dist"			// nazwa folderu wyjściowego, w którym będzie umieszczony przetranspilowany JS
+  }
+}
+
+Tu opisany: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
+
+Webstorm ma wbudowanego TypeScripta.
+
+W Settings -> Languages&Frameworks -> TypeScript zaznaczamy:
+
+x TypeScript language service
+x Show project errors
+x Recompile on changes
+
+Rozszerzenia plików TypeScript to .ts
+
+TypeScript działa w momencie pisania programu, nie w momencie uruchomienia.
