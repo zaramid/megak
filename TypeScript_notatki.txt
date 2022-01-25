@@ -9,7 +9,7 @@ tsconfig.json
     "sourceMap": true,			// włącza sourceMap by widzieć połączenie JS z TS (np. błędy)
     "target": "es6",			// jaka wersję JS wygenerować
     "downlevelIteration": true,		// działanie nowych pętli np. for..of i for..in
-    "lib": ["es6", "dom.iterable"],	// co jest dostępne. Można dopisać "dom", gdy jest to aplikacja frontendowa
+    "lib": ["es6", "dom.iterable"],	// co jest dostępne. W jakim jesteśmy środowisku. Można dopisać "dom", gdy jest to aplikacja frontendowa
     "outDir": "dist"			// nazwa folderu wyjściowego, w którym będzie umieszczony przetranspilowany JS
   }
 }
@@ -27,3 +27,86 @@ x Recompile on changes
 Rozszerzenia plików TypeScript to .ts
 
 TypeScript działa w momencie pisania programu, nie w momencie uruchomienia.
+
+**********************
+
+		Typescript w Visual Studio Code
+
+1. npm i -g typescript  // tylko raz w systemie. Instalacja globalna.
+
+2. tsc --version  // wyświetla wersję TypeScript
+
+3. Trzeba stworzyć plik automatyzacji, który mówi aby obserwować zmiany w kodzie i go kompilować:
+
+.vscode/tasks.json
+
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "typescript",
+            "type": "typescript",
+            "tsconfig": "tsconfig.json",
+            "option": "watch",
+            "auto": true,
+            "problemMatcher": [
+                "$tsc-watch"
+            ]
+        }
+    ]
+}
+
+4. Zainstalować plugin AutoLauch:
+https://marketplace.visualstudio.com/items?itemName=philfontaine.autolaunch
+
+**************************
+
+Deno
+
+Alternatywa dla Node.js. TypeScript działa na niej natywnie.
+
+**************************
+
+		ts-node
+		
+Pozwala korzystać z TypeScript bez względu na środowisko, w jakim pracujemy.
+
+Instalacja globalna: 
+
+npm i -g ts-node
+
+W katalogu naszej aplikacji instalujemy go dla developera:
+
+npm i -D ts-node
+
+Można stworzyć skrypt w package.json:
+
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node index.ts"
+  },
+  
+Aby zautomatyzować wykrywanie zmian:
+
+1. Zainstaluj npm i -D ts-node-dev
+2. Wywołaj: tsnd index.ts lub ts-node-dev index.ts
+3. Można dodać skrypt do package.json:
+
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node index.ts",
+    "start:dev": "tsnd index.ts"
+  },
+  
+*****************************
+
+Można też testować TypeScripta na https://www.typescriptlang.org/play
+
+*****************************
+
+Typy danych:
+
+- można wypisywać wartości zmiennych jako ich typ:
+
+const foobar: 'Biały' | 'Żółty' | 'Zielony' = 'Biały';
+
