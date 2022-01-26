@@ -110,3 +110,241 @@ Typy danych:
 
 const foobar: 'Biały' | 'Żółty' | 'Zielony' = 'Biały';
 
+- typ Array jest typem generycznym, tzn. ma w sobie inny typ:
+
+const foo: Array<number> = [1, 2, 3];
+const bar: Array<string> = ['asc', 'qwe', 'zxc'];
+
+const foobar: Array<string | number> = [1, '2', 3, 'qaz'];
+
+- możliwe jest takie zachowanie:
+
+const bar: Array<string> = ['asc', 'qwe', 'zxc'];
+const data = JSON.parse('123'); // data jest liczbą!
+bar.push(data); 
+console.log(bar); // tablica stringów bar zawiera także liczbę data, lecz TypeScript nie zwrócił błędu!!!
+
+TypeScript nie może sobie z tym poradzić, bo nie wie jakie dostaniemy dane.
+
+Trzeba dane sprawdzać samemu, np.:
+
+if (typeof data !== 'string') {
+   throw new Error('Invalid data type. String expected.');
+}
+
+Inny, popularniejszy zapis tablic:
+
+const bar: string[] = ['asc', 'qwe', 'zxc'];
+const foobar: (string | number)[] = [1, '2', 3, 'qaz'];
+
+Gdy tablica jest oczywista, można nie podawać typu, ale gdy jest pusta, to trzeba, bo TypeScript nada jej typ 'any'.
+
+- enum
+
+Zawsze z wielkiej litery:
+
+enum UserRole {
+    Admin,
+    User,
+    BannedUser,
+}
+
+Poszczególne pozycje mają przypisane indeksy zaczynające się od 0.
+
+Zastosowanie:
+
+const piotrUserRole = UserRole.Admin;
+
+console.log(piotrUserRole); // wyświetli '0'
+
+- void
+
+Stosowane aby zaznaczyć, że funkcja nic nie zwraca.
+
+- null
+
+np.:
+
+const foobar: number | null = 123;
+
+- undefined
+
+******************************
+
+		Rzutowanie
+		
+Konwersja jednego typu na inny wykonywana w sposób jawny.
+
+const data = JSON.parse(json); 
+
+tutaj data ma typ 'any', gdyż TypeScript nie potrafi przewidzieć jej typu.
+Można nadać właściwy typ zmiennej data, np.:
+
+const data = JSON.parse(json) as number; 
+
+Możliwy jest też zapis, który ponoć nie zawsze działa:
+
+const data: number = JSON.parse(json);
+
+*******************************
+
+		Interfejsy
+		
+Interfejs to jest określenie struktury danych.  
+Po transpilacji na JavaScript wszystko co związane z interfejsami zniknie. 
+Interfejsy pozwalają podnieść poziom abstrakcji i uzyskać luźniejsze powiązania pomiędzy klasami w naszych aplikacjach. 
+Pozwala to projektować zależności nie ograniczając się do konkretnego typu – wystarczy, aby dany typ spełniał zadany interfejs.
+
+Interfejsy są kontraktem – to znaczy, jeżeli dana klasa, czy obiekt implementuje konkretny interfejs to zobowiązuje się ona do spełnienia jego wszystkich wymogów. 
+Jakie są wymogi? Najczęściej ograniczają się one do utworzenia metod o konkretnej sygnaturze.
+
+interface Person {
+    name: string;
+    age: number;
+    isDeveloper: boolean;
+}
+
+const personA: Person = {
+   name: 'Piotr',
+   age: 52,
+   isDeveloper: true,
+}
+
+Możliwy też jest zapis:
+
+const personB = {
+   name: 'Gosia',
+   age: 52,
+   isDeveloper: false,
+} as Person;
+
+W funkcji:
+
+function greet(person: Person): void {
+   console.log(`Hello ${person.name}`);
+}
+
+greet(personB);
+
+greet({
+   name: 'Filip',
+   age: 33,
+   isDeveloper: false,
+});
+
+Interfejs może też zawierać funkcje:
+
+interface Person {
+    name: string;
+    age: number;
+    isDeveloper: boolean;
+    greet(): void;
+    // greet: () => void; // inny zapis funkcji
+}
+
+const personA: Person = {
+   name: 'Piotr',
+   age: 52,
+   isDeveloper: true,
+   greet(): void {
+      console.log(`Hello ${this.name}`);
+   }
+}
+
+W interfejsie mogą też być właściwości opcjonalne, jak np. address:
+
+interface Person {
+    name: string;
+    age: number;
+    isDeveloper: boolean;
+    address?: string;
+    greet(): void;
+}
+
+Podczas implementacji np. obiektu, trzeba sprawdzać, czy ta właściwość opcjonalna istnieje, np.:
+
+if (person.address) {...}
+
+Interfejs można użyć do opisania obiektów np. tablicy:
+
+interface Person {
+    name: string;
+    age: number;
+}
+
+// tablica obiektów typu Person
+const ar: Person[] = [
+    {
+        name: 'Piotr',
+        age: 52,
+    },
+    {
+        name: 'Gosia',
+        age: 52,
+    }
+];
+
+---
+
+Klasy mogą implementować intefejsy:
+
+class Person {
+   name: string;
+   age: number;
+
+   constructor(name: string, age: number) {
+      this.name = name;
+      this.age = age;
+   }
+}
+
+Można połączyć klasę z interfejem:
+
+interface Human {
+   name: string;
+   surname: string;
+   age: number;
+}
+
+class Person implements Human {
+   name: string;
+   surname: string = ''; // wartość domyślna
+   age: number;
+
+   constructor(name: string, age: number) {
+      this.name = name;
+      // this.surname = '';
+      this.age = age;
+   }
+}
+
+a nawet z kilkoma interfejsami:
+
+interface Human {
+   name: string;
+   surname: string;
+   age: number;
+}
+
+interface GetHistory {
+   history: string[];
+   showHistory(): void;
+}
+
+class Person implements Human, GetHistory {
+   name: string;
+   surname: string = ''; // wartość domyślna
+   age: number;
+   history: string[] = [];
+
+   constructor(name: string, age: number) {
+      this.name = name;
+      // this.surname = '';
+      this.age = age;
+   }
+
+   showHistory(): void {
+      console.log(this.history);
+   }
+}
+
