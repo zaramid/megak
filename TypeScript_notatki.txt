@@ -348,3 +348,37 @@ class Person implements Human, GetHistory {
    }
 }
 
+
+Interfejsy mogą rozszerzać (dziedziczyć) inne interfejsy:
+
+interface Human {
+   name: string;
+   surname: string;
+   age: number;
+}
+
+interface HumanWithRole extends Human {
+   role: string;
+}
+
+class User implements HumanWithRole {
+   role: string;
+   name: string;
+   surname: string;
+   age: number;
+
+}
+
+
+Interfejs jako typ danych w tabeli:
+
+interface HistoryEntry {
+   createdAt: Date;
+   event: string;
+}
+
+interface History {
+   history: HistoryEntry[];
+}
+
+
