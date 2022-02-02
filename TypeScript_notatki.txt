@@ -370,7 +370,7 @@ class User implements HumanWithRole {
 }
 
 
-Interfejs jako typ danych w tabeli:
+Interfejs jako typ danych w tabeli (w innym interfejsie):
 
 interface HistoryEntry {
    createdAt: Date;
@@ -381,4 +381,165 @@ interface History {
    history: HistoryEntry[];
 }
 
+
+***********************
+
+		type
+		
+Typy nazywamy z wielkiej litery.
+		
+Gdy mamy np.:
+
+const abc: number | string = 123;
+const xyz: number | string = 456;
+
+function sum(a: number | string, b: number | string): string {
+   return (a as string + b as string);
+}
+
+to "number | string" się powtarza.
+Można więc stworzyć typ:
+
+type NumOrStr = number | string;
+
+i użyć go w powyższym przykładzie:
+
+const abc: NumOrStr = 123;
+const xyz: NumOrStr = 456;
+
+function sum(a: NumOrStr, b: NumOrStr): string {
+   return (a as string + b as string);
+}
+
+************************
+
+		klasy
+		
+class Human {
+    name: string;
+    surname: string;
+
+    constructor(name: string, surname: string) {
+        this.name = name;
+        this.surname = surname;
+    }
+}
+
+
+- Klasa jako typ
+
+klasa jest również typem, np.
+
+function greet(person: Human) {
+    console.log(`Hello ${person.name}!`);
+}
+
+- "super"
+Działa podobnie jak w JS ES6:
+
+class Animal {
+    specieName: string;
+
+    constructor(specieName: string) {
+        this.specieName = specieName;
+    }
+}
+
+class Human extends Animal {
+    name: string;
+    surname: string;
+    
+    constructor(name: string, surname: string) {
+        super('human'); // wykonujemy konstruktor klasy, z której dziedziczymy
+        this.name = name;
+        this.surname = surname;
+    }
+}
+
+- Deklarowanie i Inicjalizowanie pól w klasach TypeScript
+
+class Human extends Animal {
+    name: string;
+    surname: string;
+    liveEvents: string[] = []; // to pole faktycznie jest przenoszone do konstruktora
+    isAlive = true; // można ominąć typowanie, gdyż typ zmiennej jest oczywisty dla TS
+    
+    constructor(name: string, surname: string) {
+        super('human');
+        this.name = name;
+        this.surname = surname;
+    }
+}
+
+- Automatyczne deklarowanie i przekazywanie pól z konstruktora
+
+Zamiast pisać:
+
+class Human {
+    name: string;
+    surname: string;
+    
+    constructor(name: string, surname: string) {
+        this.name = name;
+        this.surname = surname;
+    }
+}
+
+można:
+
+class Human {    
+    constructor(public name: string, public surname: string) {
+    }
+}
+
+Dla czytelności lepiej zapisywać:
+
+class Human {    
+    constructor(
+        public name: string, 
+        public surname: string
+    ) {}
+}
+
+A tak wygląda jeden z poprzednich przykładów:
+
+class Animal {
+    constructor(
+        public specieName: string
+    ) {}
+}
+
+class Human extends Animal {
+    liveEvents: string[] = [];
+    isAlive = true;
+    
+    constructor(
+        public name: string, 
+        public surname: string
+    ) {
+        super('human');
+    }
+}
+
+
+- "readonly" - czyste klasy
+
+Właściwość nadana w momencie tworzenia obiektu nie może być później zmieniona:
+
+class Human {
+    readonly liveEvents: string[] = [];
+    isAlive = true;
+    
+    constructor(
+        public readonly name: string, 
+        public readonly surname: string
+    ) {}
+}
+
+const piotrek = new Human('Piotr', 'Zawadzki');
+piotrek.name = 'John'; // nie pozwala na zmianę "name"
+piotrek.liveEvents = []; // nie wolno
+piotrek.liveEvents.push('Urodziny'); // zadziała
+
+czyli "readonly" działa podobnie do "const".
 
