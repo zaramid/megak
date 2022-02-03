@@ -543,3 +543,154 @@ piotrek.liveEvents.push('Urodziny'); // zadziała
 
 czyli "readonly" działa podobnie do "const".
 
+
+	- Modyfikatory dostępów
+
+1. public - domyślny, gdy nie podamy żadnego modyfikatora
+oznacza on, że dana właściwość może być modyfikowana z zewnątrz obiektu.
+
+2. private
+
+class Pc {
+    private isOn = false; // ustawiamy jako właściwość prywatną
+
+    constructor(
+        public cpu: string,
+        public ram: number,
+    ) {};
+
+    on() {
+        console.log('Loading BIOS...');
+        if (!this.cpu) {
+            throw new Error('CPU is lacking.');
+        }
+        this.isOn = true;
+    }
+}
+
+const piotrsComputer = new Pc('Core 2 Duo', 4096);
+piotrsComputer.isOn = true; // BŁĄD!!! Nie można jej modyfikować, gdyż jest prywatna
+
+isOn może być tylko zmodyfikowane poprzez metodę z wnętrza klasy on():
+
+piotrsComputer.on();
+
+'private' może też być w konstruktorze:
+
+class Pc {
+    private isOn = false;
+
+    constructor(
+        private cpu: string,
+        private ram: number,
+    ) {};
+
+    on() {
+        console.log('Loading BIOS...');
+        if (!this.cpu) {
+            throw new Error('CPU is lacking.');
+        }
+        this.isOn = true;
+    }
+
+    changeCPU(newCPU: string) {
+        if (newCPU === '') {
+            throw new Error('CPU is required.');
+        }
+        this.cpu = newCPU;
+    }
+}
+
+const piotrsComputer = new Pc('Core 2 Duo', 4096);
+piotrsComputer.changeCPU('Athlon 777');
+piotrsComputer.on();
+
+3. protected
+
+Gdy mamy kod:
+
+class Animal {
+    constructor(
+        private readonly specieName: string;
+    ) {};
+}
+
+class Human extends Animal {
+    private readonly liveEvents: string[] = [];
+    private isAlive = true;
+    
+    constructor(
+        public name: string, 
+        public surname: string
+    ) {
+        super('human');
+    }
+
+    addLiveEvent(event: string): void {
+        this.liveEvents.push(event);
+    }
+
+    getLiveEvents(): string[] {
+        return this.liveEvents;
+    }
+    
+    
+    // Ta metoda NIE ZADZIAŁA, gdy specieName jest prywatne w klasie Animal
+    // ale ZADZIAŁA, gdy zmienimy ją na "protected", gdyż wtedy klasa rozszerzająca ma do niej dostęp. Nie ma jednak do niej dostępu spoza klasy rozszerzającej.
+    
+    showSpecieName(): string {
+        return this.specieName;
+    }
+    
+}
+
+const piotr = new Human('Piotr', 'Zawadzki');
+piotr.addLiveEvent('Urodziny');
+
+console.log(piotr.specieName); // NIE ZADZIAŁA, bo "protected"
+
+console.log(piotr.showSpecieName());
+
+Z 'private' korzysta się bardzo często, z 'protected' niezbyt.
+
+Metody również mogą mieć modyfikatory dostępu.
+
+W kodzie:
+
+class Animal {
+    constructor(
+        protected readonly specieName: string,
+    ) {};
+}
+
+class Human extends Animal {
+    private readonly liveEvents: string[] = [];
+    private isAlive = true;
+    
+    constructor(
+        public name: string, 
+        public surname: string
+    ) {
+        super('human');
+    }
+
+    addLiveEvent(event: string): void {
+        this.liveEvents.push(event);
+        this.checkPulse();
+    }
+
+    getLiveEvents(): string[] {
+        return this.liveEvents;
+    }
+
+    showSpecieName(): string {
+        return this.specieName;
+    }
+
+    private checkPulse(): void {
+        console.log('Sprawdzam puls');
+    }
+}
+
+metoda checkPulse() może być ujżyta tylko wewnątrz klasy.
+
