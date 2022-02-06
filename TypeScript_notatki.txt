@@ -866,4 +866,48 @@ async function getTodo(id: number): Promise<SingleTodo> {
 })();
 
 
+*****************************
+
+		Utility types
+		
+Specjalne typy, które coś robią z innymi typami.
+
+Jednym z nich jest Omit, np.
+
+Mamy interface
+
+interface SingleTodo {
+    userId: number;
+    id: number;
+    title: string;
+    completed: boolean;
+}
+
+a gdy w metodzie create nie potrzebujemy 'id' z tego interfejsu, to
+używamy Omit:
+
+async create(task: Omit<SingleTodo, 'id'>): Promise<any> {
+        const resp = await fetch(`${this.url}/`, {
+            method: 'POST',
+            body: JSON.stringify(task),
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
+            },
+        });
+        return await resp.json();
+    }
+
+
+Gdy w Omit chcemy usunąć więcej wartości, to podajemy je po znaku '|' np.:
+
+Omit<SingleTodo, 'id' | 'completed' | 'userId'>
+
+
+Profesjonalnie użylibyśmy Omit przenosząc go do typu:
+
+type SingleTodoToCreate = Omit<SingleTodo, 'id'>;
+
+
+*****************************
+
 
