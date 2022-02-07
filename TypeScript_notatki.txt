@@ -910,4 +910,90 @@ type SingleTodoToCreate = Omit<SingleTodo, 'id'>;
 
 *****************************
 
+		Typy Enum
+		
+Typ wyliczeniowy.
+
+enum Gender {
+    Woman,
+    Man,
+    Secret,
+}
+
+console.log(Gender.Man); // da wartość 1, bo numeracja zaczyna się od 0.
+
+Można to zmienić:
+
+enum Gender {
+    Woman = 1,
+    Man,
+    Secret,
+}
+
+console.log(Gender.Man); // da wartość 2, bo numeracja zaczyna się od 1.
+
+Ustawiać wartość tylko na pierwszej pozycji lub na wszystkich:
+
+enum Gender {
+    Woman = 1,
+    Man = 0,
+    Secret = -1,
+}
+
+Można też przypisać stringi, ale wtedy do wszytskich, bo nieprzypisane będą 'undefined':
+
+enum Gender {
+    Woman = 'WOMAN',
+    Man = 'MAN',
+    Secret = 'SECRET',
+}
+
+
+console.log(Gender.Man) // zwróci 'MAN'
+
+Enum działa jak typ "tablicowy" tzn. jest iterowalny, czyli gdy:
+
+enum Gender {
+    Woman,
+    Man,
+    Secret,
+}
+
+to:
+
+console.log(Gender[Gender.Woman]); // zwróci 'Woman', stosowane aby dostać nazwę
+console.log(Gender[1]); 	   // zwróci 'Man'
+console.log(Gender.Secret);	   // zwróci 2
+
+natomiast:
+
+for (const key in Gender) {
+    console.log(key);
+}
+
+wyświetli:
+
+"0" 
+"1" 
+"2" 
+"Woman" 
+"Man" 
+"Secret"
+
+więc aby pokazać same nazwy, trzeba napisać np.:
+
+for (const key in Gender) {
+    if (Number.isNaN(Number(key))) {
+        console.log(key);
+    }
+}
+
+(czyli wyświetl te, które nie da się skonwertować na liczby),
+
+albo z użyciem Object.keys:
+
+const allPossibilities = Object.keys(Gender).filter(key => Number.isNaN(Number(key)));
+console.log(allPossibilities);
+
+******************************
 
