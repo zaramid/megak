@@ -997,3 +997,149 @@ console.log(allPossibilities);
 
 ******************************
 
+		export, import
+		
+Dzielenie programu na pliki.
+
+Wszystkie rzeczy związane z typami, czyli interface, type, enum wrzuca się do osobnych plików, np. w folderze 'types'.
+
+Gdy w type/Gender.ts umieścimy enum:
+
+enum Gender {
+    Woman,
+    Man,
+    Secret,
+}
+
+to "po staremu" możemy go wyeksportować:
+
+module.exports = {
+    Gender,
+};
+
+natomiast w TypeScript i nowym JS używamy export:
+
+export {
+    Gender,
+};
+
+Można też najkrócej napisać:
+
+export enum Gender {
+    Woman,
+    Man,
+    Secret,
+}
+
+i tak się pisze najczęściej.
+
+W pliku np. index.ts importujemy:
+
+import { Gender } from "./types/Gender";
+
+(w Webstorm alt+Enter importuje automatycznie).
+
+Jest to równoznaczne zapisowi:
+
+const {Gender} = require('./types/Gender');
+
+Aby zmienić nazwę enuma z Gender na Sex w require pisaliśmy:
+
+const {Gender: Sex} = require('./types/Gender');
+
+console.log(Sex[Sex['Woman']]);
+
+natomiast w imporcie:
+
+import { Gender as Sex } from "./types/Gender";
+
+
+W jednym pliku słowa export można użyć wielokrotnie:
+
+export enum Gender {
+    Woman,
+    Man,
+    Secret,
+}
+
+export function() {}
+
+---
+
+Export domyślny (default):
+
+
+W pliku ./types/Gender.ts:
+
+enum Gender {
+    Woman,
+    Man,
+    Secret,
+}
+
+export default Gender;
+
+w pliku index.ts 
+
+import Gender from "./types/Gender";
+
+console.log(Gender[Gender['Woman']]);
+
+Można też w index.ts od razu podmienić nazwę importowanego kodu:
+
+import Sex from "./types/Gender";
+
+console.log(Sex[Sex['Woman']]);
+
+--- 
+
+Tworzymy w ./types plik index.ts, a w nim wskazujemy co eksportujemy z poszczególnych plików:
+
+export * from './gender';
+export * from './single-todo';
+
+Wtedy możemy dokonać importu w ten sposób:
+
+import {Gender, SingleTodo} from "./types/index"; // importuj wszystko
+
+Tak robi się często przy współpracy backendu i frontendu.
+
+---
+
+Dzieląc aplikację na pliki, można podobne elementy umieszczać w jednym pliku.
+Ale klasy zaleca się umieszczać po jednej w pliku.
+
+Ważne uwagi:
+
+- staraj się nie używać export default
+- eksportuj tylko to co niezbędne
+- nie używaj namespace-ów, podczas gdy sprawdzają się one np. w C#, w TypeScript nie są preferowane
+- nie eksportowuj namespace-ów jeżeli nie są preferowane
+- 1 klasa = 1 plik
+
+***************************
+
+		Pliki definicji
+		
+Instalowanie typów
+
+https://www.npmjs.com/package/date-fns
+https://www.npmjs.com/package/express
+
+npm pokazuje na podstronach paczek czy one posiadają pliki definicji, a jeśli tak, to w jaki sposób są one dołączone.
+
+Przy nazwie paczki są ikonki:
+
+TS (niebieska)- po zainstalowaniu danej paczki dostaniesz pliki definicji z wszystkimi typami, interfejsami
+DT (biała)- jest możliwość doinstalowania paczki z typami. Np. po zainstalowaniu express-a,
+trzeba doinstalować paczkę:
+ 
+@types/express
+
+czyli:
+
+ npm i -D @types/express
+ 
+ pliki te powinny być instalowane w devDependencies w package.json
+
+
