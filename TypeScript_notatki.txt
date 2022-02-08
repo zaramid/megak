@@ -1142,4 +1142,111 @@ czyli:
  
  pliki te powinny być instalowane w devDependencies w package.json
 
+*****************************
+
+		Dekoratory
+		
+Aby ich użyć, w tsconfig.json trzeba dodać linie:
+
+"experimentalDecorators": true,
+"emitDecoratorMetadata": true
+
+Dekoratorów zwykle nie robi się samemu, najczęściej są one dostarczone.
+
+Dekoratory to kawałki kodu, które mogą nam rozszerzyć klasy, metody i właściwości.
+
+Rozpoznaje się je po znaku @, np.:
+
+@decorator()
+
+Przykład:
+
+@
+class Test {
+
+    @measureTime()			// dekorator do funkcji push()
+    @description('array.push()')	// drugi dekorator do funkcji push()
+    push() {
+        const ar = [];
+        for (let i = 1; i < 100000; i++) {
+            ar.push(i);
+        }        
+    }
+    
+    @measureTime()			// ten sam dekorator do funkcji less()
+    less() {
+        console.log('Testing push...');
+        const ar = [];
+        for (let i = 1; i < 100000; i++) {
+            ar[ar.length] = i;
+        }        
+    }
+    
+    destr() {				// ta metoda nie ma dekoratorów
+        console.log('Testing destr...');
+        let ar: number[] = [];
+        const start = + new Date();
+        for (let i = 1; i < 100000; i++) {
+            ar = [...ar, i]
+        }
+        const end = + new Date();
+        console.log(`It took ${end - start} ms.`);
+    }
+}
+
+
+Do jednej klasy, metody, właściwości może być przypisanych wiele dekoratorów.
+
+Można je pisać także obok siebie:
+
+@measureTime() @description('array.push()')
+
+
+Przykład zastosowania dekoratora do właściwości:
+
+Mamy klasę, w której setterami ograniczamy możliwe wartośći właściwości:
+
+class Test {
+    constructor(
+        private userName: string,
+        private userGender: string
+    ) {}
+
+    get name(): string {
+        return this.userName;
+    }
+
+    set name(newName: string) {
+        if (!['Bartek', 'Kuba'].includes(newName)) {
+            throw new Error('Invalid name!');
+        }
+
+        this.userName = newName;
+    }
+
+    get gender(): string {
+        return this.userGender;
+    }
+
+    set gender(newGender: string) {
+        if (!['man', 'woman'].includes(newGender)) {
+            throw new Error('Invalid gender!');
+        }
+
+        this.userGender = newGender;
+    }
+}
+
+A teraz ta sama klasa z wykorzystaniem dekoratora ograniczającego te właściwości
+(tu nazywa się on allow-list-only.ts)
+
+class Test {
+    @allowListOnly(['Bartek', 'Kuba'])
+    name: string = 'Bartek';
+    
+    @allowListOnly(['woman', 'man'])
+    gender: string = 'man';
+}
+
+**************************
 
