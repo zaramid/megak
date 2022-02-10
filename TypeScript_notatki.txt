@@ -1,3 +1,5 @@
+		Początkowa konfiguracja
+
 Przykładowy plik konfiguracyjny opisujący działanie TypeScript:
 
 tsconfig.json
@@ -10,9 +12,70 @@ tsconfig.json
     "target": "es6",			// jaka wersję JS wygenerować
     "downlevelIteration": true,		// działanie nowych pętli np. for..of i for..in
     "lib": ["es6", "dom.iterable"],	// co jest dostępne. W jakim jesteśmy środowisku. Można dopisać "dom", gdy jest to aplikacja frontendowa
-    "outDir": "dist"			// nazwa folderu wyjściowego, w którym będzie umieszczony przetranspilowany JS
+    "outDir": "dist",			// nazwa folderu wyjściowego, w którym będzie umieszczony przetranspilowany JS
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "moduleResolution": "Node"		// będziemy używać node'owych modułów
   }
 }
+
+tsconfig.json bez komentarzy:
+
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "target": "es6",
+    "downlevelIteration": true,
+    "lib": ["es6", "dom.iterable"],
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "moduleResolution": "Node"
+  }
+}
+
+
+package.json
+
+- umieszczamy w nim dodatkowo skrypty startowe:
+
+{
+  "scripts": {
+    "start": "ts-node index.ts",
+    "start:dev": "tsnd index.ts"
+  }
+}
+
+Linia:
+
+"start:dev": "tsnd index.ts" 
+
+jest odpowiednikiem node'owego:
+
+"start": "npx nodemon index.ts"
+
+
+Instalacja TypeScrypta:
+
+npm i -D ts-node ts-node-dev typescript
+
+
+		Przerabianie programu JS na TS
+		
+Powiedzieć Webstormowi, że korzystamy z node'a instalując pliki definicji typów dla node.js:
+
+npm i -D @types/node
+
+Należy sprawdzić w npm , czy mamy typy TS dla pozostałych pakietów, z których korzystamy i jeśli mają w npmjs oznaczenie DT, to je doinstalować. Np.:
+
+npm i -D @types/express @types/cookie-parser
+
+Niektóre paczki, jak np. express/handlebars oznaczone są jako TS w npmjs, więc zawierają już pliki definicji i nie trzeba ich doinstalowywać.
+
+
+*****************************
 
 Tu opisany: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
 
@@ -1249,4 +1312,39 @@ class Test {
 }
 
 **************************
+
+Przy korzystaniu z express'a musimu go zaimportować w ten sposób:
+
+import * as express from 'express';
+
+Podobnie jest z cookie-parser i express-handlebars.
+
+*****
+
+
+Typ danych:
+
+- tablica tekstów lub liczb
+
+(string | number)[]
+
+- tablica, której pierwszy elemement to string a drugi to number
+
+[string, number]
+
+- tablica tablic zawierających jako pierwszy string i jako drugi number
+
+[string, number][]
+
+np. [['chocolate', 5], ['sprinkles', 3], ['honey', 6]]
+
+- typ generyczny
+
+podajemy nazwę typu w nawiasach <> i później tą nazwę stosujemy dalej, np.:
+
+isNotInArray: <T>(array: T[], element: T): boolean => !array.includes(element) 
+
+mówi, że typy danych w tablicy array i w zmiennej element muszą być takie same,
+czyli np. oba to string albo number lub inne.
+
 
