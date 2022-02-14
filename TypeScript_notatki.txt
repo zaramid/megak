@@ -1224,7 +1224,7 @@ Rozpoznaje się je po znaku @, np.:
 
 Przykład:
 
-@
+@nazwaDecoratora(parametry)
 class Test {
 
     @measureTime()			// dekorator do funkcji push()
@@ -1324,19 +1324,23 @@ Podobnie jest z cookie-parser i express-handlebars.
 
 Typ danych:
 
+
 - tablica tekstów lub liczb
 
 (string | number)[]
 
+
 - tablica, której pierwszy elemement to string a drugi to number
 
 [string, number]
+
 
 - tablica tablic zawierających jako pierwszy string i jako drugi number
 
 [string, number][]
 
 np. [['chocolate', 5], ['sprinkles', 3], ['honey', 6]]
+
 
 - typ generyczny
 
@@ -1346,5 +1350,12 @@ isNotInArray: <T>(array: T[], element: T): boolean => !array.includes(element)
 
 mówi, że typy danych w tablicy array i w zmiennej element muszą być takie same,
 czyli np. oba to string albo number lub inne.
+
+
+- Record<string, number>
+
+ten typ opisuje obiekt, w którym klucze to stringi, a wartości to liczby
+
+
 
 
