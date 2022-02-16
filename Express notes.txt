@@ -1,10 +1,20 @@
 *** REST-owy projekt w Express.js po kolei ***
 
 0. Przygotowanie
+
 - npm init
+
 - Webstorm - wybrac wersje Node.js
+
 - skrypty: np.
+
   "start": "npx nodemon index.js" 
+  
+  lub dla TypeScript:
+  
+  "start": "ts-node index.ts",
+  "start:dev": "tsnd index.ts"
+  
 - npm i express express-handlebars
 
 1. Konfiguracha express.js:
@@ -35,3 +45,282 @@ app.listen(3000, 'localhost', () => {
 
 2. Konfiguracja routerow (traserow), widokow itp.
 
+
+***********************************
+
+W TypeScript:
+
+import * as express from "express";
+
+***********************************
+
+Request, czyli req:
+
+req.hostname - nazwa hosta
+req.ip - IP hosta, może być "zaciemniona" przez proxy
+req.ips - tablica wszystkich adresów IP, które się do nas przyłaczyły
+req.method - metoda, którą dokonano zapytania, np. GET
+
+Metoda 'all' obsługuje wszystkie metody.
+
+req.url - z Node'a, zwraca url
+req.originalUrl - zwraca znormalizowany url, zawierjący ścieżkę pierwotną 
+		(nawet po p;rzekierowaniach)
+req.path - zwraca część URL-u zawierającą ścieżkę
+
+req.protocol - zwraca protokół: 'http' albo 'https'
+req.secure - zwraca true gdy połączenie https, i false gdy http (tru gdy jest to
+		połączenie TLS)
+		
+W adresie: http://www.phoneshop.com/?product=iphone&size=32gb&color=white
+- www.phoneshop.com to URL
+- ? początek Query String
+- product to nazwa parametru
+- iphone to wartość parametru
+- & to separator Query String
+
+
+Generowanie parametrów adresu URL, czyli URI:
+
+1. encodeURIComponent - zwraca poprawnie sformatowanego stringa, np. 
+
+  encodeURIComponent('Piotr & Gosia') zwraca 'Piotr%20%26%20Gosia' czyli
+  
+  http://localhost:3000/?name=Piotr%20%26%20Gosia
+  
+  Jest on LEGACY. Lepiej używać:
+  
+2. URLSearchParams:
+
+  importujemy go:
+  
+  import {URLSearchParams} from 'url';
+
+
+  const qs = new URLSearchParams();
+
+  qs.set('name', 'Gosia & Piotr'); 
+  
+  // można też w jednej komendzie:
+  
+  const qs = new URLSearchParams({'name', 'Gosia & Piotr'});
+
+  qs.toString() zwraca 'name=Gosia+%26+Piotr'
+  
+  gdzie spacja jest zapisana jako '+'.
+  
+a więc użycie:
+
+  `http://localhost:3000/?${qs.toString()}`
+  
+  wygeneruje
+  
+  'http://localhost:3000/?name=Gosia+%26+Piotr'
+  
+W programie:
+
+import {URLSearchParams} from 'url';
+
+const qs = new URLSearchParams({
+    name: 'Gosia & Piotr',
+});
+
+console.log(`http://localhost:3000/?${qs.toString()}`);
+
+wypisze: http://localhost:3000/?name=Gosia+%26+Piotr
+
+
+Przesłane parametry można odebrać za pomocą 
+
+	req.query
+	
+zwraca on obiekt z parametrami. Np. dla zapytania
+
+  http://localhost:3000/?name=Piotr%20%26%20Gosia&age=52
+  
+zwróci on obiekt:
+
+  { name: 'Piotr & Gosia', age: '52' }
+  
+
+Ponieważ URLSearchParams zwraca + zamiast %20, więc użyjemy funkcji
+
+	function generateQueryString(params) {
+  	    const qs = new URLSearchParams(params);
+  	    return `${qs}`.replace(/\+/g, '%20');
+	}
+  
+i tak możemy jej użyć:
+
+console.log(`http://localhost:3000/dane/?${generateQueryString({
+  name: 'Gosia & Piotr',
+  age: 52,
+  city: 'Kolding'
+})}`);
+
+co zwróci: 
+
+http://localhost:3000/dane/?name=Gosia%20%26%20Piotr&age=52&city=Kolding
+
+
+
+	req.get()
+
+- pobiera nagłówki wysłane przez klienta, np. user-agent
+
+   req.get('user-agent')
+   
+****************************************
+
+		Routing
+		
+metoda + ścieżka
+
+Ścieżki bardziej zaawansowane:
+
+/stala/sciezka/:zmienna
+/stala/inna/sciezka/:zmienna1/:zmienna2
+
+- nazwy jak zmiennych
+- oddzielone za pomocą /, . lub -
+
+Kolejność w routingu ma znaczenie, np.
+
+app.get('/article/:articleName', (req, res) => {});
+
+app.get('/article/new', (req, res) => {});
+
+przy wywołaniu http://localhost:3000/article/new zostanie wywołany pierwszy get
+i new zostanie podstawione pod zmienną :articleName. Dlatego trzeba drugi get
+umieścić przed pierwszym.
+
+- parametr opcjonalny:
+
+app.get('/article/:id/:title?', (req, res) => {});
+
+		
+		req.params
+		
+Wszystkie przesłane parametry są w req.params:
+
+app.get('/article/:id/:title?', (req, res) => {});
+
+np. http://localhost:3000/article/123/nasz-artykul
+
+console.log(req.params) zwróci obiekt
+
+{ id: '123', title: 'nasz-artykul' }
+
+*****************************************
+
+		Response
+		
+- obiekt reprezentujący odpowiedź na zapytanie HTTP
+
+Można skorzystać z Nodeowego write i end:
+
+app.get('/', (req, res) => {
+   res.write('Test');
+   res.end();
+});
+
+	res.send
+	
+robi to samo: wysyła odpowiedź i kończy połączenie, a dokładnie:
+
+1. Ustawia automatycznie nagłówek Content-Type
+2. Ustawia automatycznie nagłówek Content-Length
+3. Ustawia nagłówki związane z podstawowym cachingiem (dbanie o przechowywanie w pamięci przeglądarki rzeczy, które mogą się nie zmienić. ETag w Header steruje cachem przeglądarki).
+4. Konwertuje dane jeżeli to potrzebne
+5. Przesyła dane.
+6. Kończy połączenie.
+
+Za pomocą res.send(dane) można przesłać dane:
+- string, czyli text/html i przesłanie tekstu,
+- Buffer, czyli application/octet-stream i przesłanie czystych danych,
+- array/Object - application/json i zakodowanie danych jako JSON.
+
+Wysłanie obiektu jako JSON:
+
+res.send({
+   id: req.params.id,
+   content: 'Lorem ipsum dolor sit amet, consectetur adip',
+});
+
+	res.json()
+	
+zawsze wysyła JSON-a i ustawia Content-Type na application/json.
+
+res.json({
+   id: req.params.id,
+   content: 'Lorem ipsum dolor sit amet, consectetur adip',
+});
+
+- res.json() zawsze wysyła JSON-a, nawet gdy podamy jej stringa
+- expressjs zawiera opcje pozwalające ładniej go formatować
+
+***********************************
+
+		Przekierowania
+		
+Aby przekierować użytkownika na inny serwer trzeba wysłać mu 
+- kod statusu HTTP
+- nagłówek odpowiedzi Location
+
+Location ustawi:	res.location()
+
+np.
+
+res.location('https://fsf.org');
+res.end(); // trzeba wskazać zakończenie połączenia
+
+Całą obsługę przekierowań załatwi:
+
+		res.redirect()
+
+Domyślne przekierowanie:
+
+app.get('/', (req, res) => {
+   res.redirect('https://fsf.org');
+});
+
+Domyślnie ustawiony jest kod statusu HTTP na 302. Można go zmienić podając jako pierwszy argument:
+
+app.get('/', (req, res) => {
+   res.redirect(301, 'https://fsf.org');
+});
+
+
+301 - przekierowanie trwałe (przeglądarka zapamiętuje je i później już nie odpytuje starego adresu, tylko od razu przekierowuje na nowy)
+
+302 - przekierowanie niestałe (teraz przejdź na ten adres, ale w przyszłości to może być inny)
+
+303 - zobacz gdzie indziej ()
+
+307 - przekierowanie tymczasowe
+
+Podając ścieżki do przekierowania można użyć:
+
+- absolutny adres URL: 'https://fsf.org'
+- ścieżki wewnętrznej: '/article/new'
+- ścieżki wewnętrzne z użyciem '..' - rzadko używana
+- 'back' - odniesienie do nagłówka Referrer lub ścieżki głównej.
+
+
+
+**************************************
+Pytania:
+
+1. Skoro TypeScript jest tak ważny dla backendowców, to czy nie lepiej byłoby nauczyć go zaraz
+po poznaniu JavaScriptu, a potem Node'a, Expressa i reszty uczyć korzystając z TypeScript?
+
+2. Przy wykorzystaniu URLSearchParams używaliśmy funkcji generateQueryString zamieniającej  w utworzonych parametrach plusy na spacje:
+
+function generateQueryString(params) {
+  const qs = new URLSearchParams(params);
+  return `${qs}`.replace(/\+/g, '%20');
+}
+
+Czy mógłbyś podpowiedzieć, jak ustalić typ 'params' nie uciekając się do 'any'?
+
+3. 
