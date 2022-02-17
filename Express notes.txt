@@ -306,6 +306,149 @@ Podając ścieżki do przekierowania można użyć:
 - ścieżki wewnętrzne z użyciem '..' - rzadko używana
 - 'back' - odniesienie do nagłówka Referrer lub ścieżki głównej.
 
+******************************
+
+		Przesyłanie plików
+		
+	res.sendFile('path', {options})
+	
+Obiekt opcji options zawiera m.in.:
+
+- root - folder, w którym muszą znajdować się pliki
+- lastModified - pozwala zdecydować przeglądarce, czy ponownie pobierać plik.
+- headers - pozwala dodać nagłówki, np. własne z X- na początku.
+- dotfiles - allow/deny/ignore (domyślnie) dla plików z kropką:
+	allow - pozwalamy je pobrać,
+	deny - komunikat o braku dostępu,
+	ignore - brak komunikatu, tak jakby ich nie było
+- i inne
+
+Ścieżka path musi być absolutna. Można użyć join() z modułu "path":
+
+	res.sendFile(join(__dirname, 'cookie.jpg'));
+	
+Ścieżkę i inne opcje można podać w obiekcie:
+
+app.get('/pobierz', (req, res) => {
+        res.sendFile('cookie.jpg', {
+            root: __dirname,
+        });
+    });
+
+Nigdy nie udostępniać plików z folderu aplikacji, lecz tylko ze wskazanego miejsca, folderu np. 'files':
+
+res.sendFile('cookie.jpg', {
+    root: join(__dirname, 'files'),
+});
+
+Podsumowując:
+
+res.sendFile('cookie.jpg', {
+    root: join(__dirname, 'files'),
+        headers: {
+            'X-Powered-By': 'Zaramid',
+        },
+        dotfiles: 'deny',
+});
+	
+
+
+	res.attachment()
+	
+- gdy podamy nazwę pliku, zostanie od przesłany jako załącznik, trzeba wtedy też dodać linię kończącą połączenie res.end():
+
+res.attachment(join(__dirname, 'files', 'cookie.jpg'));
+res.end();
+// są wątpliwości czy tak to działa
+
+- gdy umieścimy komendę bez nazwy pliku przed res.sendFile(), także zostanie on wysłany jako załącznik. Przeglądarka otrzyma w headers: 
+
+   Content-Disposition	attachment
+
+app
+    .get('/pobierz', (req, res) => {
+        res.attachment();
+        res.sendFile('cookie.jpg', {
+            root: join(__dirname, 'files'),
+            headers: {
+                'X-Powered-By': 'Zaramid',
+            },
+            dotfiles: 'deny',
+        });
+    });
+
+
+
+	res.download()
+	
+- wysyła plik jako załącznik. Parametry ma takie jak sendFile().
+
+app
+    .get('/pobierz', (req, res) => {
+        const options = {
+            headers: {
+                'X-Powered-By': 'Zaramidus',
+            },
+            dotfiles: 'deny',
+        };
+
+        res.download('files/cookie.jpg', 'kukiz.jpg', options);
+
+    });
+
+pobierze plik cookie.jpg i zapisze go jako kukiz.jpg.
+
+
+
+	res.set()
+	
+pozwala ustawić dowolne wewnętrzne nagłówki.
+
+Można podać jeden nagłówek jako parametr:
+
+   res.set('Content-Type', 'text/plain');
+   
+lub podać kilka nagłówków naraz jako obiekt:
+
+   res.set({
+       'Content-Type': 'text/plain',
+       'Content-Length': '123',
+   });
+
+
+Poszczególne metody można ustawić w chainingu:
+
+app.get('/pobierz', (req, res) => {
+
+        res
+        
+            .set({
+                'X-Powered-By': 'Zaramid',
+            })
+            
+            .sendFile('cookies.jpg', {
+                root: join(__dirname, 'files'),
+            });
+    });
+
+
+
+	res.headersSent
+	
+pole informujące, czy nagłówki zostały już przesłane. Najpierw ustawiaj nagłówki. Gdy zostaną przesłane, wysyłaj treść. Po treści nie da się wysłać nagłówków.
+
+*****************************
+
+		Ciasteczka
+		
+	res.cookie()
+	
+ustawia nowe ciastko.
+
+
+
+
+
 
 
 **************************************
