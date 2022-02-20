@@ -445,25 +445,40 @@ pole informujące, czy nagłówki zostały już przesłane. Najpierw ustawiaj na
 	
 ustawia nowe ciastko.
 
+Wszystkie ciastka wysłane do klienta, zostaną zwrócone przy kolejnym zapytaniu.
 
+Ciasteczka są nagłówkami, dlatego należy je wysyłać zanim zostaną wysłane dane, czyli np. przed send().
 
+Najprostsze ustawienie ciastka:
 
+    res.cookie('nazwa-ciastka', 'wartosc ciastka');
 
+Jest to ciastko sesyjne, czyli po zamknięciu przeglądarki albo resecie systemu, jeste już niedostępne.
 
+Używane m.in. do utrzymywania sesji podczas zalogowania do banku.
 
-**************************************
-Pytania:
+Bardziej zaawansowane ciastka zawierają obiekt opcji, w którym można podać m.in.:
 
-1. Skoro TypeScript jest tak ważny dla backendowców, to czy nie lepiej byłoby nauczyć go zaraz
-po poznaniu JavaScriptu, a potem Node'a, Expressa i reszty uczyć korzystając z TypeScript?
+- domain - domena, do której będą wysyłane ciastka. Używane na produkcji.
+  Ciastka są odsyłane tylko do tego, kto je wysłał. Gdy nie podana, to ustawiana jest aktualna.
+  
+- path: '/' - ustawienie domyślne, ciastka będą odsyłane dla każdej podstrony.
+  Można wskazać ścieżkę, dla której mają być odsyłane, czego często nie chcemy, bo wtedy gdy ktoś wejdzie na podstronę, to ona nie zobaczy ciastka.
+  
+- expires - czas (data) do kiedy ciastko ma być zapamiętane
 
-2. Przy wykorzystaniu URLSearchParams używaliśmy funkcji generateQueryString zamieniającej  w utworzonych parametrach plusy na spacje:
+- maxAge - alternatywa do expires. 
+  Określa jak długo ciastko ma istnieć w ms (1 rok = 1000 * 60 * 60 * 24 * 365)
 
-function generateQueryString(params) {
-  const qs = new URLSearchParams(params);
-  return `${qs}`.replace(/\+/g, '%20');
-}
+Gdy ustawimy czas życia ciastka, przestaje ono być sesyjne.
 
-Czy mógłbyś podpowiedzieć, jak ustalić typ 'params' nie uciekając się do 'any'?
+- httpOnly - uniemozliwia frontendowi dostęp do ciastka. Używane np. do utrzymywania zalogowania.
+JavaScript w przeglądarce nie ma dostępu do tego ciastka.
 
-3. 
+- secure - stosowany na produkcji. Gdy ustawione na true:
+
+   secure: true
+   
+   a połączenie nie jest https, to ciastko nie jest wysyłane.
+   
+   
