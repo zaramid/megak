@@ -1,0 +1,296 @@
+            express-handlebars
+            
+Instalacja:
+
+1.  npm i express-handlebars
+  
+2. stworzyć strukturę plików w katalogu aplikacji:
+
+   --views (folder z poszczególnymi widokami stron)
+     |
+     --home.bs (plik)
+     |
+  	 --layouts (folder z szablonami stron)
+  	   |
+  	   --main.hbs (plik)
+
+3. Plik main.hbs zawiera strukturę HTML:
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<img src="megak.webp" alt="Logo Mega Kurs">
+<hr>
+{{{body}}}
+</body>
+</html>
+
+Jest to szablon strony, w którym w {{{body}}} zostanie wstrzyknięty widok aktualnie wyświetlanej strony.
+
+4. Ustawiamy Express.js:
+
+const {engine} = require('express-handlebars');
+
+(...)
+
+app.engine('.hbs', engine({extname: '.hbs'})); // używaj silnika widoków z plikami .hbs
+app.set('view engine', '.hbs'); // ustaw .hbs jako domyślny silnik widoków
+
+*** Używanie ***
+
+  res.render(nazwaWidoku)
+  
+- generuje i wyświetla widok, np. gdy zapytanie z url-a /hi:
+
+app.get('/hi', (req, res) => {
+  res.render('home');
+});
+
+
+--- Przekazywanie danych do widoków ---
+
+Wstawienie zmiennej do widoku:
+
+    <h1>Hello {{ firstName }}, you are {{ age }} years old.</h1>
+  
+Aby tą zmnienną przekazać, trzeba podać ją w obiekcie jako drugi argument 
+res.render:
+
+    app.get('/', (req, res) => {
+      res.render('home', {
+        firstName: 'Piotr',
+        age: 53,
+      });
+    });
+
+Można też przekazać obiekt, np.:
+
+    res.render('home', {
+        person : {
+            firstName: 'Piotr',
+            age: 53,    
+        },        
+    });
+
+i wstawić do widoku w postaci:
+
+	<h1>Hello {{ person.firstName }}, you are {{ person.age }} years old.</h1>
+
+Można też wstawić zmienne poprzez rodzaj destrukturyzacji pól obiektu
+za pomocą  #with:
+
+	{{#with person}}
+        <h1>Hello {{ firstName }}, you are {{ age }} years old.</h1>    
+	{{/with}}
+
+
+Można również przekazać tablicę:
+
+    res.render('home', {
+        person : {
+            firstName: 'Piotr',
+            age: 53,
+        },
+        dates: [1990, 1991, 1992, 1993, 1994],
+    });
+
+i w widoku iterować po niej:
+
+	{{#each dates}}
+    	{{this}}
+	{{/each}}
+
+Można więc stworzyć listę:
+
+	<ul>
+    	{{#each dates}}
+        	<li>{{this}}</li>
+    	{{/each}}
+	</ul>
+
+--------------
+- W handlebarsach nie da się zrobić ataku XSS
+- Nigdy nie generuj np. dynamicznie JS. Handlebars bezpiecznie traktuje tylko HTML.
+- Nigdy nie przekazuj wszystkich danych przesłanych przez użytkownika!
+--------------
+
+
+Gdy chcę CELOWO wstrzyknąć HTML do swojego kodu:
+
+	res.render('home', {
+        person : {
+            firstName: 'Piotr',
+            age: 53,
+        },
+        dates: [1990, 1991, 1992, 1993, 1994],
+        html: '<strong>Pragnę HTML!</strong>',
+    });
+
+to trzeba tę zmienną html wywołać w widoku w następujący sposób:
+
+	{{{html}}}
+	
+	Uwaga: {{html}} nie pozwoli na to!
+	
+	{{{html}}} całkowicie wyłącza bezpieczeństwo!
+	
+*************************
+
+	--- Partiale ---
+	
+Używa się ich do elementów, które nie są częścią szablonu, ale często się powtarzają (np. komentarze).
+
+Znajdują się w folderze views/partials.
+Można też tworzyć podfoldery.
+
+Plik z patialem również ma końcówkę .hbs
+
+Partiala używamy wpisując w widoku:
+
+	{{>nazwaPlikuPartiala}}
+	
+Można go wstawiać wielokrotnie w róznych miejscach, np.:
+
+{{>share}}
+{{#with person}}
+    <h1>Hello {{ firstName }}, you are {{ age }} years old.</h1>
+{{/with}}
+
+<ul>
+    {{#each dates}}
+        <li>{{this}}</li>
+    {{/each}}
+</ul>
+
+{{{html}}}
+
+{{> share}}
+
+Jeśli partial jest w podfolderze, to wstawia się go w postaci:
+
+{{> podfolder/nazwaPlikuPartiala}}
+
+
+	--- Komentarze ---
+	
+{{!-- Zakomentowany szablon --}}
+
+komentarz nie będzie widoczny w źródle strony HTML w przeglądarce.
+
+
+	--- Lepsze pętle ---
+	
+{{#each tablica}}
+	{{this}}
+{{else}}
+	Brak wyników
+{{/each}}
+
+np.
+
+<ul>
+    {{#each dates}}
+        <li>{{this}}</li>
+    {{else}}
+        <li>Brak danych w tablicy</li>
+    {{/each}}
+</ul>
+
+
+	--- Warunki ---
+	
+	{{#if warunek}}
+		Tak
+	{{/if}}
+
+Odwrotny:
+
+	{{#unless warunek}}
+		Nie
+	{{/unless}}
+	
+Z "else":
+
+	{{#if warunek}}
+		Tak
+	{{else}}
+		W przeciwnym wypadku
+	{{/if}}
+	
+"Warunek" musi być "pustawy", czyli true/false, pusty string, tablica itp. 
+Nie zadziałają bardziej skomplikowane warunki typu x > 5.
+
+
+	--- Logowanie w konsoli---
+	
+	{{log 'firstname' firstname 'lastname' lastname}}
+
+np. 
+
+	{{log 'name' firstName 'isHuman' isHuman}}
+	
+	wyświetli w konsoli: name Piotr isHuman false
+	
+	a
+
+	{{log dates}}
+
+	pokaże zawartość tablicy dates: [ 1969, 1970, 1971 ]
+	
+Słuzy głównie do debugowania, by zobaczyć jakie dane ma handlebars.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
