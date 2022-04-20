@@ -1,0 +1,19 @@
+Instrukcje dla każdego projektu osobno:
+1. npm init -y
+2. npm i -D eslint babel-eslint eslint-config-airbnb
+
+3. Tworzymy plik .eslintrc w głównym folderze naszego projektu z zawartością:
+
+
+{
+  "parserOptions": {
+    "ecmaVersion": 2021
+  },
+  "env": {
+    "browser": true, 
+    "node": true 
+  },
+  "parser": "babel-eslint",
+  "extends": "airbnb",
+  "rules": {}
+}
