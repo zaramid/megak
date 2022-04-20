@@ -1,0 +1,5 @@
+Aby otrzymać skonfigurowane środowisko do tworzenia aplikacji w React, najlepiej użyć:
+
+npx create-react-app <nazwa-apki>
+
+
