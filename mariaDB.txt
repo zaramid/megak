@@ -1,0 +1,275 @@
+Używać kodowania
+
+	utf8mb4_unicode_ci
+	
+- utf8mb4 - poprawna implementacja UTF8 używająca 1 - 4 bajty na znak
+- unicode - wskazuje na implementację unicode (może być mylące)
+- ci - case insensitive - porównanie nie uwzględnia wielkości znaków,
+	"Abc" === "ABC" === "abc"
+	jest to zazwyczaj pożądane w bazach danych.
+- to kodowanie traktuje spacje wokół tekstu jako nieistniejące, czyli
+	"Ab  " === "Ab"
+	
+Pojęcia:
+
+- typ kolumny - typ przechowywanych danych
+- indeksy - dla często przeszukiwanych danych
+- klucz główny - primary key - indeks utworzony na unikalnym identyfikatorze
+- klucze obce - służące do łączenia tabel, czyli tworzenia relacji
+- AUTO_INCREMENT - stosowany w kluczu głównym automatyczne zwiększanie wartości klucza
+- NULLABLE - właściwość pola mówiąca, że może mieć ono wartość NULL
+- liczba znaków typu INT to max. 11
+
+Najważniejsze typy kolumn:
+- varchar
+- int i podobne
+- decimal i podobne (cała liczba to skala, po przecinku to precyzja)
+- text i podobne
+- datetime i podobne
+
+Po dodaniu encji mySQL zwraca identyfikator, jeśli został utworzony automatycznie.
+
+SQL:
+
+SELECT * FROM `students`;
+// pokaż wszystkie kolumny z tabeli students
+
+- Dla nazw baz, tabel, pól używamy `backticków`
+- Dla pozostałych stringów używamy 'apostrofów' lub "cudzysłowów"
+
+** Wybieranie konkretnych kolumn to pierwsza optymalizacja:
+
+- pobierać tylko potrzebne kolumny, aby uniknąć pobierania zbyt dużej ilości danych:
+
+SELECT `firstName`, `lastName` FROM `students`;
+
+Możemy tworzyć własną reprezentację danych, np. :
+
+SELECT `lastName`, `firstName` FROM `students`;
+
+** Wybieranie konkretnych danych:
+
+	WHERE
+	
+Gdzie:
+
+	= 		porównanie
+	
+		SELECT * FROM `students` WHERE `age` = 53;
+	
+	<>		inny niż
+	
+		SELECT * FROM `students` WHERE `age` <> 53;
+		
+		i matematycznie, np.
+		
+		SELECT * FROM `students` WHERE `age` > 53;
+	
+	NOT		zaprzeczenie
+	
+		SELECT * FROM `students` WHERE `age` IS NOT NULL;
+	
+	IS NULL jest NULL
+	
+		SELECT * FROM `students` WHERE `age` IS NULL;
+	
+	OR		lub
+	
+		SELECT * FROM `students` WHERE `age` IS NOT NULL AND `age` < 50;
+	
+	AND		oraz
+	
+	
+	IN		jedna wartość z
+	
+		SELECT * FROM `students` WHERE `id` = 1 OR `id` = 3
+		można zastapić:
+		
+		SELECT * FROM `students` WHERE `id` IN (1, 3)
+		
+		- uwaga: trzeba podać przynajmniej 1 element, inaczej będzie błąd.
+		
+	ORDER BY	sortowanie
+	
+		SELECT * FROM `students` WHERE `age` < 70 ORDER BY `age`;
+		
+	ASC		rosnąco
+	
+		SELECT * FROM `students` ORDER BY `lastName` ASC;
+	
+	DESC	malejąco
+	
+		SELECT * FROM `students` WHERE `age` < 70 ORDER BY `age` DESC;
+		
+	Słowo WHERE musi być przed ORDER:
+	
+		SELECT * FROM `students` WHERE `age` IS NOT NULL ORDER BY `age` DESC
+		
+	PAGINACJA	dzielenie danych na strony
+	
+		LIMIT offset, count
+		
+		gdy jest jedna cyfra, to oznacza ona count:
+		
+		SELECT * FROM `students` WHERE `age` IS NOT NULL ORDER BY `age` DESC LIMIT 3
+		
+		pokaże tylko trzy pierwsze rekordy z wyniku zapytania
+		
+		a gdy są dwie cyfry np. 
+		
+		SELECT * FROM `students` WHERE `age` IS NOT NULL ORDER BY `age` DESC LIMIT 4, 3
+		
+		to pokaże od pozycji 4 (offset) kolejne 3 (count) rekordy.
+		
+--- Funkcje agregacyjne ---
+
+Funkcje agregujące zbiory danych.
+
+	COUNT(*)
+	
+		SELECT COUNT(*) FROM `cars` WHERE `brand` = 'Ford'
+		
+		zwróci liczbę rekordów (np. 4)spełniających warunek.
+
+		Można nazwać tę zwracaną daną np. 'cnt':
+		
+		SELECT COUNT(*) AS `cnt` FROM `cars` WHERE `brand` = 'Ford'
+		
+	SUM(pole)
+	
+		SELECT SUM(`price`) FROM `cars`
+		
+	Zsumowanie cen aut i wyliczenie sredniej ceny:
+	
+		SELECT SUM(`price`) AS `priceSum`, COUNT(*) AS `cnt`, (SUM(`price`) / COUNT(*)) AS `avg` FROM `cars`
+		
+		wynik to:
+		
+		priceSum  	cnt	avg
+		858609.98	12	71550.831667
+		
+		Można używać zapisu:
+		
+		SELECT 
+			SUM(`price`) AS `priceSum`, 
+    		COUNT(*) AS `cnt`, 
+    		(SUM(`price`) / COUNT(*)) AS `avg` 
+    	FROM `cars`
+
+--- Wyszukiwanie po dacie ---
+
+	Aby wyszukiwanie było jak najszybsze, poszukiwaną datę zapisujemy jako string w formacie:
+	
+	'YYYY-MM-DD hh:mm:ss'
+	
+	np.: 
+	
+	SELECT * FROM `cars` WHERE `firstRegistrationAt` = '1975-06-15 00:00:00'
+	
+	Oczywiście, aby wyszukiwanie było szybkie, należy unikać * po SELECT i podać nazwy potrzebnych pól:
+	
+	SELECT `brand`, `model`, `firstRegistrationAt` FROM `cars` WHERE `firstRegistrationAt` >= '2000-01-01 00:00:00' 
+	
+	Wyszukiwanie po dacie "pomiędzy":
+	
+	SELECT `brand`, `model`, `firstRegistrationAt` 
+	FROM `cars` 
+	WHERE 
+		`firstRegistrationAt` >= '2000-01-01 00:00:00' AND
+		`firstRegistrationAt` < '2020-01-01 00:00:00'
+	
+	można też użyć BETWEEN (oznacza >= i >=)
+	
+	SELECT 
+		`brand`, `model`, `firstRegistrationAt` 
+	FROM `cars` 
+		WHERE `firstRegistrationAt` 
+		BETWEEN '2000-01-01 00:00:00' AND '2020-01-01 00:00:00'	
+
+--- Wyszukiwanie tekstu ---
+
+	Aby sprawdzić, czy dany ciąg znaków występuje w tekście używamy instrukcji
+	
+	`pole` LIKE 'xxx'
+	
+	gdzie:
+	
+	% oznacza dowolny ciąg znaków,
+	_ oznacza dowolny znak.
+	
+		SELECT * FROM `students` WHERE `lastName` LIKE 'z%'
+		
+	wyszuka wszystkie nazwiska zaczynające się na 'z' lub 'Z'.
+	
+		SELECT * FROM `students` WHERE `firstName` LIKE '%a%'
+		
+	wyszuka  wszystkich studentów mających w imieniu literkę 'a'.
+	
+
+--- Dodawanie informacji do bazy danych ---
+
+	INSERT INTO `nazwa_tabeli` VALUES (...);
+	
+	wartości w VALUES muszą być po kolei, zgodnie z kolejnością pól tabeli:
+	
+		INSERT INTO `students` VALUES (NULL, 'Agata', 'Maruda', 33, 'Mazowiecka 22 m 3')
+		
+	Można podać konkretnie pola, jakie chcemy wypełnić w dodanym rekordzie:
+	
+		INSERT INTO `students`(`firstName`, `lastName`, `addressStreet`) VALUES ('Maciej', 'Pełka', 51)
+		
+	Dodawanie wielu rekordów jednocześnie:
+	
+		INSERT INTO `students`
+			(`firstName`, `lastName`, `age`, `addressStreet`) 
+		VALUES 
+			('Tadeusz', 'Pan', 23, 'Wileńska 22'),
+    		('Anna', 'Jakubowska', 19, 'Morska 17 / 4'),
+    		('Aniela', 'Tykwa', 35, 'Kanadyjska 1A');
+    		
+    INSERT INTO zwraca Id wstawionego wiersza (gdy mam miejsce autoinkrementacja).
+    
+
+--- Usuwanie rekordów ---
+
+	DELETE...
+	
+		DELETE FROM `students` WHERE `id` = 20;    	
+
+	Najczęstsze rodzaje usuwania / aktualizacji:
+	
+	- po ID (identyfikatorze, kluczu głównym)- bezpieczne
+	- po danych - wymaga ostrożności
+	- bez where - NIEBEZPIECZNE!!! Można wszystko usunąć!!!
+	
+--- Aktualizacja ---
+
+	UPDATE...
+	
+	Tak jak DELETE wymaga wielkiej uwagi.
+	
+		UPDATE `cars` SET `color` = 'metallic green' WHERE `registrationNo` = 'PLU675432'
+		
+		UPDATE `cars` SET `price` = `price` * 0.8 WHERE `price` >= 100000
+		
+		
+--- Automatyczne typy danych ---
+
+	- UUID
+		
+		- pozwala uzyskać bezpieczniejsze identyfikatory
+		- na jego podstawie nie można zgadnąć poprzedniego ani następnego indetyfikatora
+		
+		- ma typ VARCHAR o długości 36
+
+
+--- Aktualna data i czas ---
+
+	CURRENT_TIMESTAMP()
+	
+	Często tworzy się pole zapisujące czas utworzenia rekordu nazywane
+	createdAt, któremu nadaje się typ DATETIME i które baza danych wypełnia
+	używając funkcji CURRENT_TIMESTAMP().
+	
+	
+		 
