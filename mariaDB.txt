@@ -272,4 +272,250 @@ Funkcje agregujące zbiory danych.
 	używając funkcji CURRENT_TIMESTAMP().
 	
 	
-		 
+		***************	
+		*** RELACJE ***
+		***************
+		
+Relacja to powiązanie ze sobą dwóch encji (tabel).
+
+Rodzaje relacji:
+
+- jeden-do-jednego (1-1)
+	Jeden rekord powiązany max z jednym innym rekordem. 
+	Relacja prosta, rzadko stosowana.
+	Np. ustawienia użytkownika.
+	
+- jeden-do-wielu (1-nieskończoność)
+  (a po drugiej stronie wiele-do-jednego)
+
+	Jeden rekord może posiadać wiele powiązanych rekordów.
+	W drugą stronę każdy z tych rekordów może posiadać tylko jeden powiązany.
+	Najczęstsza relacja.
+	Np. użytkownik ma wiele adresów. Każdy adres ma jednego użytkownika.
+	
+- wiele-do-wielu (nieskończoność-nieskończoność)
+
+	 Wiele rekordów może posiadać powiązania do wielu innych rekordów.
+	 Tak samo jest w drugą stronę.
+	 Ta relacja wymaga tabeli pośredniej.
+	 Np. wielu użytkowników uczestniczy w wielu pokojach chatowych jednocześnie. Każdy pokój chatowy może zawierać wielu użytkowników.
+	 
+- może także istnieć relacja encji samej do siebie.
+	
+	Np. użytkownik poleca aplikację innym użytkownikom. 
+	Ma on więc potencjalnie wielu poleconych (jeden-do-wielu).
+	Każdy użytkownik może mieć max jednego polecającego (wiele-do-jednego).
+	
+Do projektowania relacji można użyć UML. W sieci np. diagrams.net (draw.io).
+
+Przy budowie relacji trzeba utworzyć pole odwołujące się do pola w drugiej tabeli, które najczęściej ma nazwę:
+	
+	nazwa_tabeli_w_liczbie_pojedyńczejNazwa_pola_do_którego_się_odnosimy
+	
+	np. studentId
+	
+Przy tworzeniu relacji wiele-do-wielu musimy stworzyć tabelę pośrednią,
+która najczęściej ma nazwę:
+	
+	nazwaTabeli_nazwaTabeli
+	
+	np. students_courses
+	
+	Zawiera ona jakiś id aby mieć klucz główny oraz dwa pola nazwane jak przy relacji jeden-do-wielu.
+
+Przy tworzeniu realcji w phpMyAdmin, najpierw utworzyć indeks pola dla relacji, a dopiero później relację.
+
+-- Nadanie UUID wszystkim polom w kolumnie:
+
+	UPDATE `students` SET `id`= UUID() WHERE 1
+	
+--- Dodanie danych do tabeli z UUID:
+
+	INSERT INTO `carparks` (`id`, `address`, `area`) 
+	VALUES 
+		(UUID(), 'Koszykowa 22, 75-240 Koszalin', 1200),
+        (UUID(), 'Darłowska 7, 72/400 Słupsk', 3452.5),
+        (UUID(), 'Plac Unii Lubelskiej 112, 72-345 Białogard', 623.97),
+        (UUID(), 'Gdańska 44, 73-222 Kowalewice', 352.6);
+	
+-- Utworzenie tabeli:
+
+	CREATE TABLE `students_courses` (
+		`id` INT(11) AUTO_INCREMENT,
+    	`studentId` VARCHAR(36) NULL,
+    	`courseName` VARCHAR(20) NULL,
+    	PRIMARY KEY (`id`)
+	)
+	
+-- Utworzenie dodatkowych indeksów
+
+	ALTER TABLE `students_courses` ADD INDEX( `studentId`);
+	ALTER TABLE `students_courses` ADD INDEX( `courseName`);
+	
+-- Dodanie klucza obcego dla relacji:
+
+	ALTER TABLE `students_courses` ADD FOREIGN KEY (`courseName`) REFERENCES `courses`(`name`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+	
+-- Dodanie wartości do tabeli:
+
+	INSERT INTO `students_courses` (`id`, `studentId`, `courseName`) 
+	VALUES 
+		(NULL, 'ce8b6bd5-c577-11ec-9753-ef8be9eeecd4', 'Mega Kurs'), 
+		(NULL, 'ce8b6bd5-c577-11ec-9753-ef8be9eeecd4', 'Common Lisp');
+	
+**** Pobieranie relacji:
+
+	-- relacja jeden do wielu:
+	
+	SELECT * FROM `students` JOIN `courses` ON `students`.`courseName` = `courses`.`name`;	
+	
+*** Typy JOIN-ów ***
+
+- Inner Join (domyślny) - wynikiem są dane znajdujące się w obu tabelach 
+	Gdy wpisuje się JOIN to oznacza to INNER JOIN.
+	
+	SELECT * FROM `students` INNER JOIN `courses` ON `students`.`courseName` = `courses`.`name`;
+	
+- Full Join - wszystkie dane z obu tabel.
+
+	W mysql nie ma takiej opcji, można ją sobie zasymulować.
+
+- Left Join - bierzemy wszystkie dane znajdujące się po lewej stronie relacji + część wspólna. Czyli cała lewa tabela + informacje z prawej dotyczące pól z lewej.
+
+SELECT * FROM `students` LEFT JOIN `courses` ON `students`.`courseName` = `courses`.`name`;
+
+- Right Join
+
+	SELECT * FROM `students` RIGHT JOIN `courses` ON `students`.`courseName` = `courses`.`name`;
+
+
+**** Pobieranie relacji:
+
+	-- relacja wiele do wielu:
+	
+	czyli połączenie z tablicą pośrednią
+	
+	SELECT * FROM `students` 
+		JOIN `students_courses` ON `students`.`id` = `students_courses`.`studentId`
+    	JOIN `courses` ON `students_courses`.`courseName` = `courses`.`name`
+	
+	a tak ze wskazaniem pól do wyświetlenia:
+	
+	SELECT `students`.`firstName`, `students`.`lastName`, `courses`.`name` FROM `students`
+		JOIN `students_courses` ON `students`.`id` = `students_courses`.`studentId`
+    	JOIN `courses` ON `students_courses`.`courseName` = `courses`.`name`;
+
+	plus sortowanie wg nazwy kursu malejąco:
+	
+	SELECT `students`.`firstName`, `students`.`lastName`, `courses`.`name` FROM `students`
+		JOIN `students_courses` ON `students`.`id` = `students_courses`.`studentId`
+    	JOIN `courses` ON `students_courses`.`courseName` = `courses`.`name`
+    ORDER BY `courses`.`name` DESC;
+    
+    dodatkowo zawierające w nazwie kursu słowo 'mega':
+    
+    SELECT `students`.`firstName`, `students`.`lastName`, `courses`.`name` FROM `students`
+		JOIN `students_courses` ON `students`.`id` = `students_courses`.`studentId`
+    	JOIN `courses` ON `students_courses`.`courseName` = `courses`.`name`
+    	WHERE `courses`.`name` LIKE '%mega%'
+    	ORDER BY `courses`.`name` DESC;
+    	
+    i jeszcze jeden przykład:
+    
+    SELECT `cars`.`registrationNo`, `cars`.`brand`, `cars`.`model`, `carparks`.`address`
+	FROM `cars`
+    JOIN `cars_carparks` ON `cars_carparks`.`carRegistrationNo` = `cars`.`registrationNo`
+    JOIN `carparks` ON `carparks`.`id` = `cars_carparks`.`carparkId`
+    WHERE `cars`.`price` >= 50000 AND `carparks`.`id` = '6aec72f5-c61c-11ec-977c-f08df2148e8b';
+    	
+
+
+*******************************************************************
+*																  *
+*						BAZY DANYCH W KODZIE					  *
+*																  *
+*******************************************************************
+
+Uwaga: pracując z bazami danych nie używamy nodemon, gdyż każda zmiana w programie powodowałaby powtórną zmianę w bazie danych.
+
+Do obsługi baz typu mysql w Node użyjemy paczki z npm mysql2 w wersji Promise.
+
+Instalacja i konfiguracja:
+
+npm i mysql2
+
+Kod:
+
+const mysql = require('mysql2/promise');
+
+(async () => {
+    // create the connection to database
+    const connection = await mysql.createConnection({
+        host: 'localhost',
+        uset: 'root',
+        database: 'test'
+    });
+})();
+
+U nie trezba to było wpisać w postaci:
+
+const conn = await mysql.createConnection({
+        host: 'localhost',
+        user: 'phpmyadmin',
+        password: 'xxxxxxxxxxx',
+        database: 'megak_cars',
+        socketPath: '/run/mysqld/mysqld.sock',
+    });
+
+Połączenie można zakończyć poprzez:
+
+	await conn.end();
+	
+Zapytania wykonuje się poprzez:
+
+	connection.query()
+	
+lub
+
+	connection.execute()
+	
+	- ten jest szybszy, gdyż robi prepared statement
+	
+Zapytanie:
+
+	const answer = await conn.execute('SELECT * FROM `cars` WHERE `registrationNo` = "DE 51269"');
+	
+	zwraca tablicę dwuelementową, gdzie:
+	
+	- pierwszy element to także tablica, zawierająca szukane dane zwrotne 
+
+	- drugi to też tablica, zawiera informacje o polach bazy danych
+	
+robimy więc destrukturyzację:
+	
+	const [results] = await conn.execute('SELECT * FROM `cars` WHERE `registrationNo` = "DE 51269"');
+	
+	
+	UPDATE / DELETE
+	
+	jako wynik otrzymamy inną tablicę - z jedną informacją:
+	
+		- informacjami nt aktualizacji, w tym
+		
+		affectedRows - ile zmieniliśmy/usunęliśmy danych.
+		
+	const answer = await conn.execute('UPDATE `cars` SET `price` = `price` + 10000 WHERE `registrationNo` = "DE 51269"');
+	
+	Najszybszy sposób aby zobaczyć ile zmodyfikowaliśmy rekordów, to destrukturyzacją wyciągnąć affectedRows:
+	
+	const {affectedRows} = (await conn.execute('UPDATE `cars` SET `price` = `price` + 10000 WHERE `registrationNo` = "DE 51269"'))[0];
+
+to samo dotyczy dodania rekordu:
+
+	const {affectedRows} = (await conn.execute('INSERT INTO `cars` VALUES ("ZAK 6789", "Fiat", "126p", "red", "1982-04-08 00:00:00", 2450)'))[0];
+	
+lecz gdy dodajemy rekord, który powoduje utworzenie przez mysql nowego identyfikatora, to możemy z tego obiektu wyniku wyciągnąć ten identyfikator:
+
+	const {insertId} = (await conn.execute('INSERT INTO `cars_carparks` (`carRegistrationNo`, `carparkId`) VALUES ("ZAK 6789", "6aec72f5-c61c-11ec-977c-f08df2148e8b")'))[0];
+	
+	
