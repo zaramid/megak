@@ -518,4 +518,221 @@ lecz gdy dodajemy rekord, który powoduje utworzenie przez mysql nowego identyfi
 
 	const {insertId} = (await conn.execute('INSERT INTO `cars_carparks` (`carRegistrationNo`, `carparkId`) VALUES ("ZAK 6789", "6aec72f5-c61c-11ec-977c-f08df2148e8b")'))[0];
 	
+-------
+
+Liczby decimal zapisane w bazie danych, są przez mysql2 przedstawiane jako string. Żeby zapisywać je jako liczby, trzeba w konfiguracji połączenia dopisać:
+
+const conn = await mysql.createConnection({
+        host: 'localhost',
+        user: 'phpmyadmin',
+        password: 'xxxxxxxxxx',
+        database: 'megak_cars',
+        socketPath: '/run/mysqld/mysqld.sock',
+        decimalNumbers: true,
+    });
+
+Uwaga: można stracić dokładność, gdy chcemy korzystać z liczb z dużą ilością cyfr po przecinku, ponieważ w JavaScript nie da się dokładnie zapisać takich liczb.
+
+--------------------- BEZPIECZEŃSTWO !!!!!!!!!!!!!!!!!!!!!!!
+
+Gdy chcemy znaleźć coś dynamicznie, NIGDY nie pozwalać na wpisywanie SQL z zewnątrz!!!
+
+Np.
+
+	const regNo = 'ZAK 6789';
 	
+    const [results] = await conn.execute('SELECT * FROM `cars` WHERE `registrationNo` = "' + regNo +'"'); 
+
+	zmienna regNO została podana do kodu SQL z zewnątrz.
+	
+Np.podanie jako zmienna '" OR "" = "' daje dostęp do wszystkich danych tabeli.
+
+Inny przykład:
+
+gdy w ustawieniach połączenia (const conn = ...) jest ustawione:
+
+	multipleStatements: true
+	
+oraz użyjemy 'query' zamiast 'execute' 
+(używając ORM możemy nie wiedzieć, co działa pod spodem)
+	
+a użytkownik wpisze w zapytanie:
+	
+	"; DROP TABLE `cars`; SELECT "
+	
+to tabela cars zostanie usunięta!!!
+
+--- Aby unikąć takich problemów należy użyć
+
+		PREPARED STATEMENTS
+		
+czyli ? jako replacement oraz tablica z danymi do wstawienia,
+
+np.
+
+	const regNo = '" OR "" = "';
+    const [results] = await conn.execute('SELECT * FROM `cars` WHERE `registrationNo` = ?;', [regNo]);
+    
+każdy kolejny znak ? odpowiada kolejnemu elementowi z tablicy:
+
+	const value = 10000;
+    const {affectedRows} = (
+        await conn.execute(
+            'UPDATE `cars` SET `price` = `price` + ? WHERE `price` > ?',
+            [value, value],
+        )
+    )[0];
+
+
+--- Wygodniejszy i lepszy prepared statements:
+
+	:nazwa i obiekty
+	
+W konfiguracji połączenia trzeba dodać:
+
+	namedPlaceholders: true,
+	
+czyli:
+
+	const conn = await mysql.createConnection({
+        host: 'localhost',
+        user: 'phpmyadmin',
+        password: 'Trainor.Pmx-22',
+        database: 'megak_cars',
+        socketPath: '/run/mysqld/mysqld.sock',
+        decimalNumbers: true,
+        namedPlaceholders: true,
+    });
+    
+a w zapytaniu używamy placeholderów w sposób: :placeholderName,
+których wartości podajemy w obiekcie:
+
+{
+	placeholderName: wartośćPlaceholdera,
+}
+
+czyli:
+
+	const value = 10000;
+    const {affectedRows} = (
+        await conn.execute(
+            'UPDATE `cars` SET `price` = `price` + :myValue WHERE `price` > :myValue',
+            {
+                myValue: value,
+            },
+        )
+    )[0];
+    
+W JS gdy w obiekcie klucz i wartość mają taką samą nazwę, to można zapisać krócej:
+
+	const value = 10000;
+    const {affectedRows} = (
+        await conn.execute(
+            'UPDATE `cars` SET `price` = `price` + :value WHERE `price` > :value',
+            {
+                value,
+            },
+        )
+    )[0];
+    
+ZAWSZE UŻYWAMY PREPARED STATEMENTS GDY PODAJEMY DO SQL DANE POCHODZĄCE Z ZEWNĄTRZ!!!
+
+Prepared statemets daje dodatkowo wydajność, gdyż MySQL może raz przygotować strategię i potem aplikować ją do wielu zapytań. Działa to np. przy operacjach na wielu rekordach lub gdy jest wielu użytkowników.
+
+MySQL robi to automatycznie, ale możemy też wskazać mu kiedy ma to zrobić.
+Należy wtedy użyć 'prepare' i 'execute'. 
+
+Przygotowanie zapytania i jego wykonanie:
+
+	const statement = await connection.prepare('select ? + ? as tests');
+	try {
+		const [result] = await statement.execute([1, 2]);
+		console.log(results);
+	} finally {
+		statement.close();
+	}
+
+try-finally jest bardzo ważne, gdyż musimy zwolnić zmienną statement po zakończeniu działania.
+
+[? są interpretowane przez MySQL, a :placeholder przez mysql2]
+
+[Object.values(obiekt) stworzy tablicę wartości z obiektu 'obiekt'.]
+
+I tak np. dodanie samochodów do tablicy 'cars':
+
+// tablica z obiektami samochodów
+const cars = [
+        {
+            registrationNo: 'QWE 1234',
+            brand: 'Ferrari',
+            model: 'Testarossa',
+            color: 'red',
+            firstRegistrationAt: '1984-01-05 00:00:00',
+            price: '887000',
+        },
+        {
+            registrationNo: 'ASD 0987',
+            brand: 'Mazda',
+            model: 'H500',
+            color: 'yellow',
+            firstRegistrationAt: '2020-05-23 00:00:00',
+            price: '89500',
+        },
+        {
+            registrationNo: 'ZXC 9843',
+            brand: 'Toyota',
+            model: 'Corolla',
+            color: 'blue',
+            firstRegistrationAt: '2006-03-19 00:00:00',
+            price: '16400',
+        },
+        {
+            registrationNo: 'KLO HJ87',
+            brand: 'Skoda',
+            model: 'Fabia',
+            color: 'silver',
+            firstRegistrationAt: '2018-08-06 00:00:00',
+            price: '47000',
+        },
+    ];
+
+// przygotowanie do dodania
+    const statement = await conn.prepare('INSERT INTO `cars` VALUES (?, ?, ?, ?, ?, ?)');
+
+// dodanie poszczególnych obiektów do tablicy
+    try {
+        for (const car of cars) {
+            await statement.execute(Object.values(car));
+        }
+    } finally {
+        statement.close();
+    }
+    
+    
+***********
+
+Do bazy można mieć wiele połączeń od różnych klientów.
+Normalnie jest jedno dzielone połączenie, tzn. gdy jednocześnie chce się łączyć wielu klientów, to muszą czekać na zwolnienie tego jednego współdzielonego połączenia.
+
+Rozwiązaniem jest Connection Pooling, czyli utworzenie wielu równoległych połączeń do bazy danych.
+
+Aby to osiągnąć, tworzymy nowe połączenie poprzez createPool (a nie createConnection) i najczęściej nazywamy je pool:
+
+	const pool = await mysql.createPool({
+        host: 'localhost',
+        user: 'phpmyadmin',
+        password: 'Trainor.Pmx-22',
+        database: 'megak_cars',
+        socketPath: '/run/mysqld/mysqld.sock',
+        decimalNumbers: true,
+        namedPlaceholders: true,
+    });
+
+    const [results] = await pool.execute('SELECT * FROM `cars` WHERE `registrationNo` = "DE 51269"');
+
+    console.log(results);
+
+    pool.end();
+    
+czyli poza tym wszystko działa tak samo jak przy pojedyńczym połączeniu.
+
