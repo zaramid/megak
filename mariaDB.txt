@@ -457,7 +457,7 @@ const mysql = require('mysql2/promise');
     });
 })();
 
-U nie trezba to było wpisać w postaci:
+U nie trzeba to było wpisać w postaci:
 
 const conn = await mysql.createConnection({
         host: 'localhost',
@@ -736,3 +736,231 @@ Aby to osiągnąć, tworzymy nowe połączenie poprzez createPool (a nie createC
     
 czyli poza tym wszystko działa tak samo jak przy pojedyńczym połączeniu.
 
+UWAGA:
+
+w konfiguracji połączenia podajemy np. 
+
+	database: 'megak_courses'
+
+Zamiast tego można w programie podać na jakiej bazie pracujemy poleceniem:
+
+	await pool.execute('USE `megak_Courses`;');
+
+-----
+
+Usunięcia rekordów powiązanych z inną tabelą możliwe będzie gdy klucze obce będą miały ustawioną właściwość ON DELETE na 
+
+CASCADE - wtedy powiązane rekordy również będą usunięte
+
+NULL - wartości w powiązanych rekordach będą ustawione na NULL
+
+RESTRICT - ???
+
+Jeśli ON DELETE bedzie ustawione na NO ACTION, wtedy wyskoczy błąd. Trzeba te rekordy usunąć ręcznie NAJPIERW z tabeli pośredniej, a potem z tabeli właściwej. Często tak się robi.
+
+NO ACTION zabezpiecza przed automatycznym usunięciem danych.
+
+
+------
+
+Żeby stworzyć pole z UUID można skorzystać z biblioteki uuid z npm:
+
+	npm i uuid
+	
+podłączyć ją:
+
+	const {v4: uuid} = require('uuid');
+	
+i mamy ten identyfikator pod nazwą 'uuid'.
+
+Przykładowe skorzystanie z UUID:
+
+	const newStudentId = uuid(undefined, undefined, undefined);
+    await pool.execute('INSERT INTO `students` (`id`, `firstName`, `lastName`, `age`, `addressStreet`) VALUES (:id, :firstName, :lastName, :age, :addressStreet)', {
+        id: newStudentId,
+        firstName: 'Jakub',
+        lastName: 'Dydyna',
+        age: 15,
+        addressStreet: 'Polna 57',
+    });
+
+uwaga: 	ostatnie pole createdAt powinno zostać stworzone automatycznie,
+		gdyż ma typ current_timestamp()
+		
+		
+**************
+
+			Wzorce modelowania bazy danych w kodzie
+
+	WZORZEC ACTIVE RECORD
+	
+(sprawdzić wykład 3-5-5)
+
+Tworzymy klasę, która ma określić tabelę todos, a poszczególne obiekty mówią o wierszach tej tabeli. Umieszczamy ją np. w katalogu 'records' (lub np. entities, models) w pliku np. todo.record.js, a w nim tworzymy klasę np. 
+
+class TodoRecord {    // nazwę zaproponował Webstorm
+
+}
+
+[W utils/tworzymy plik db.js, w którym będzie połączenie z bazą danych. 
+Uprofesjonalni to aplikację.]
+
+Klasa TodoRecord jest tzw. Active Recors, gdyż zawiera także metody na niej operujące, które będą realizowały różne operacje na rekordzie.
+
+---
+
+Metoda statyczna - nie operuje na pojedyńczym rekordzie, ale na klasie, na czymś bardziej ogólnym.
+Metoda statyczna nie ma dostępu do 'this' obiektu, gdyż nie jest przypisana do obiektu, tylko do klasy.
+
+Uwaga: gdy robimy return w metodzie oznaczonej jako async, to await można pominąć.
+
+Gdy mamy metodę statyczną w obiekcie TodoRecord, np.
+
+	static async find(id) {
+        const [results] = await pool.execute('SELECT * FROM `todos` WHERE `id` = :id', {
+            id,
+        });
+        return new TodoRecord(results[0]); // zwraca nową instancję klasy, a nie zwykły obiekt
+    }
+
+to wywołujemy ją w ten sposób:
+
+	TodoRecord.find('35947474-3118-4bd9-afe3-82f2df7d2a62');
+
+czyli np.
+
+	const foundTodo = await TodoRecord.find('35947474-3118-4bd9-afe3-82f2df7d2a62');
+	
+Dzięki temu, że obiekt zwraca nową instancję klasy, możemy pracować na tym obiekcie używając metod klasy, np. usunąć znalezioną pozycję:
+
+	await foundTodo.delete();
+	
+Wstawianie i aktualizację danych często robi się jedną metodą np. save.
+
+-----
+
+	WZORZEC REPOZYTORIUM
+	
+	
+Dane w klasie rekordu, a osobna klasa "repozytotium" realizuje wszystkie zadania związane z bazą danych.
+
+Wszystkie metody w repozytorium są statyczne, gdyż nie tworzymy obiektów klasy "repository".
+
+Czyli todo.record.js:
+
+class TodoRecord {
+    constructor(obj) {
+        this.id = obj.id;
+        this.title = obj.title;
+
+        this._validate();
+    }
+
+    _validate() {
+        if (this.title.trim().length < 5) {
+            throw new Error('Todo title should be at least 5 characters.');
+        }
+
+        if (this.title.length > 150) {
+            throw new Error('Todo title should be at most 150 characters.');
+        }
+    }
+}
+
+module.exports = {
+    TodoRecord,
+}
+
+a todo.repository.js :
+
+const {v4: uuid} = require("uuid");
+const {pool} = require("../utils/db");
+const {TodoRecord} = require("../records/todo.record");
+
+class TodoRepository {
+    // metoda pomocnicza
+    static _checkRecord(record) {
+        if (!(record instanceof TodoRecord)) {
+            throw new TypeError("record must be an instance of TodoRecord");
+        }
+    }
+
+    static async insert(record) {
+        TodoRepository._checkRecord(record);
+
+        record.id = record.id ?? uuid();
+
+        await pool.execute('INSERT INTO `todos` VALUES (:id, :title)', {
+            id: record.id,
+            title: record.title,
+        });
+
+        return record.id;
+    }
+
+    static async update(record) {
+        TodoRepository._checkRecord(record);
+
+        if (!record.id) {
+            throw new Error('Todo has no ID.');
+        }
+        record._validate();
+
+        await pool.execute('UPDATE `todos` SET `title` = :title WHERE `id` = :id', {
+            id: record.id,
+            title: record.title,
+        });
+
+        //return record.id;
+    }
+
+    static async delete(record) {
+        TodoRepository._checkRecord(record);
+
+        if (!record.id) {
+            throw new Error('Todo has no ID.');
+        }
+        await pool.execute('DELETE FROM `todos` WHERE `id` = :id', {
+            id: record.id,
+        });
+    }
+
+    static async find(id) {
+        const [results] = await pool.execute('SELECT * FROM `todos` WHERE `id` = :id', {
+            id,
+        });
+        return results.length === 1 ? new TodoRecord(results[0]) : null;
+    }
+
+    static async findAll() {
+        const [results] = await pool.execute('SELECT * FROM `todos`');
+        return results.map(result => new TodoRecord(result));
+    }
+}
+
+module.exports = {
+    TodoRepository,
+}
+
+
+natomiast wywołanie w index.js :
+
+const {pool} = require("./utils/db");
+const {TodoRepository} = require("./repositories/todo.repository");
+
+(async () => {
+
+    const foundTodo = await TodoRepository.find('c66e595c-ee5e-4ebc-90f2-47c2030b759c');
+    console.log(foundTodo);
+    
+    // await TodoRepository.delete(foundTodo);
+    
+    foundTodo.title = 'Zrobić zakupy.';
+    
+    await TodoRepository.update(foundTodo);
+
+    await pool.end();
+
+})();
+
+*******************************
