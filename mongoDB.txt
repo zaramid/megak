@@ -1,0 +1,25 @@
+mongoDB
+
+Nierelacyjna baza danych (No-SQL). 
+Nie używa się w niej języka SQL.
+
+Dane przechowuje się w formie przypominającej JSON-a.
+
+Pojęcia:
+
+- baza danych (jak w SQL) zawiera wszystkie dane
+- kolekcja (jak tabela w SQL) - zawiera dokumenty
+- dokument (jak rekord w SQL, nie ma kolumn)
+- pole / właściwość (jak komórka / pole w SQL)
+
+Struktura dokumentu nie jest określona.
+
+-----
+
+	Instalacja mongoDB
+	
+	https://www.mongodb.com/docs/manual/administration/install-community/
+	
+	można tez użyć https://robomongo.org/
+	
+	
